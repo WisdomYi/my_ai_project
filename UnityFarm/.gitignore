@@ -1,0 +1,46 @@
+# Unity / 团结引擎 专用 .gitignore
+# 参考 github/gitignore 的 Unity 模板
+
+# 编译与缓存（体积大、可重新生成，必须忽略）
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+
+# 记录器/崩溃文件
+*.pidb
+*.pdb
+*.mdb
+*.booproj
+*.svd
+*.opendb
+*.VC.db
+sysinfo.txt
+crashlytics-build.properties
+
+# IDE / 解决方案文件（Unity 会自动重新生成）
+.vs/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.unityproj
+ExportedObj/
+.consulo/
+
+# 构建产物
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# meta 文件只保留"对应资源也被跟踪"的（默认全部跟踪，不忽略）
+# 空目录占位文件保留
+# 其余 meta 规则由 Unity 默认行为处理
