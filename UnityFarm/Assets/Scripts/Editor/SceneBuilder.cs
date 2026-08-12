@@ -11,7 +11,7 @@ using UnityFarm.UI;
 namespace UnityFarm.EditorTools
 {
     /// <summary>
-    /// 一键生成原型场景：Tilemap 地面 + 玩家 + 管理器 + 相机 + HUD，并创建 CropData 资产。
+    /// 一键生成原型场景：Tilemap 地面 + 玩家 + 管理器 + 地块视觉 + 相机 + HUD。
     /// 菜单：UnityFarm → Build Prototype Scene
     /// 生成后打开 Assets/Scenes/MainFarm.unity 点 Play 即可跑通种植循环。
     /// </summary>
@@ -20,10 +20,13 @@ namespace UnityFarm.EditorTools
         [MenuItem("UnityFarm/Build Prototype Scene")]
         public static void Build()
         {
-            // 1. 新场景
+            // 素材缺失时先生成
+            if (!File.Exists("Assets/Art/Tiles/grass.png"))
+                AssetGenerator.Generate();
+
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            // 2. 正交相机
+            // 正交相机
             var camGo = new GameObject("Main Camera");
             camGo.tag = "MainCamera";
             var cam = camGo.AddComponent<Camera>();
@@ -31,32 +34,36 @@ namespace UnityFarm.EditorTools
             cam.orthographicSize = 6f;
             camGo.transform.position = new Vector3(0, 0, -10f);
 
-            // 3. Tilemap 地面（程序生成的占位瓦片，正式开发换素材）
+            // 地面（草地 Tilemap）
             CreateGroundTilemap();
 
-            // 4. 玩家
+            // 玩家
             var player = CreatePlayer();
 
-            // 5. 管理器（单例系统）
+            // 管理器（单例系统）
             CreateManager("TimeManager");
             var cropSys = CreateManager("CropSystem");
             CreateManager("SaveSystem");
             CreateManager("GameManager");
 
-            // 6. HUD
+            // 地块视觉（耕地/作物各阶段显示）
+            CreateFarmVisualizer();
+
+            // HUD
             var hud = new GameObject("HUD");
             hud.AddComponent<TimeUI>();
 
-            // 7. 创建并配置 CropData 资产
+            // CropData 资产
             var cropData = CreateCropData();
             cropSys.GetComponent<CropSystem>().availableCrops.Add(cropData);
             player.GetComponent<PlantingTool>().selectedCrop = cropData;
 
-            // 8. 保存场景
             Directory.CreateDirectory("Assets/Scenes");
             EditorSceneManager.SaveScene(scene, "Assets/Scenes/MainFarm.unity");
             Debug.Log("原型场景已生成：Assets/Scenes/MainFarm.unity（按 Play 运行，WASD 移动、空格操作）");
         }
+
+        private static Sprite LoadSprite(string path) => AssetDatabase.LoadAssetAtPath<Sprite>(path);
 
         private static GameObject CreateManager(string name)
         {
@@ -82,19 +89,32 @@ namespace UnityFarm.EditorTools
             tilemapGo.AddComponent<TilemapRenderer>();
 
             var tile = ScriptableObject.CreateInstance<Tile>();
-            tile.sprite = CreatePlaceholderSprite("grass", new Color(0.32f, 0.6f, 0.32f));
+            tile.sprite = LoadSprite("Assets/Art/Tiles/grass.png");
 
             for (int x = -10; x <= 10; x++)
                 for (int y = -8; y <= 8; y++)
                     tilemap.SetTile(new Vector3Int(x, y, 0), tile);
         }
 
+        private static void CreateFarmVisualizer()
+        {
+            var go = new GameObject("FarmVisualizer");
+            var vis = go.AddComponent<FarmVisualizer>();
+            vis.tilledSprite = LoadSprite("Assets/Art/Tiles/tilled_soil.png");
+            vis.cropStageSprites = new[]
+            {
+                LoadSprite("Assets/Art/Sprites/crop_0.png"),
+                LoadSprite("Assets/Art/Sprites/crop_1.png"),
+                LoadSprite("Assets/Art/Sprites/crop_2.png"),
+            };
+        }
+
         private static GameObject CreatePlayer()
         {
             var go = new GameObject("Player");
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = CreatePlaceholderSprite("player", Color.white);
-            sr.sortingOrder = 1; // 玩家绘制在地面之上
+            sr.sprite = LoadSprite("Assets/Art/Sprites/player.png");
+            sr.sortingOrder = 2; // 玩家绘制在地块之上
 
             go.AddComponent<PlayerController>();
             go.AddComponent<PlantingTool>();
@@ -121,20 +141,6 @@ namespace UnityFarm.EditorTools
             AssetDatabase.CreateAsset(data, path);
             AssetDatabase.SaveAssets();
             return data;
-        }
-
-        private static Sprite CreatePlaceholderSprite(string name, Color color)
-        {
-            var tex = new Texture2D(16, 16, TextureFormat.RGBA32, false);
-            var pixels = new Color[16 * 16];
-            for (int i = 0; i < pixels.Length; i++) pixels[i] = color;
-            tex.SetPixels(pixels);
-            tex.filterMode = FilterMode.Point;
-            tex.Apply();
-
-            var sprite = Sprite.Create(tex, new Rect(0, 0, 16, 16), new Vector2(0.5f, 0.5f), 16f);
-            sprite.name = name;
-            return sprite;
         }
     }
 }

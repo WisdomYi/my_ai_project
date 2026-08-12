@@ -49,6 +49,12 @@ namespace UnityFarm.Gameplay
             return availableCrops.Find(c => c.cropName == cropId);
         }
 
+        /// <summary>枚举所有已开垦的地块（供视觉层同步显示）</summary>
+        public IEnumerable<FarmTile> AllTiles()
+        {
+            return _tiles.Values;
+        }
+
         // ---- 操作 ----
         public bool Till(Vector2Int pos)
         {
